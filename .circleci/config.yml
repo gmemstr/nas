@@ -1,0 +1,21 @@
+version: 2.1
+
+jobs:
+  check:
+    docker:
+      - image: cimg/rust:1.48.0
+    steps:
+      - checkout
+      - run: cargo check
+  build:
+    docker:
+      - image: cimg/rust:1.48.0
+    steps:
+      - checkout
+      - run: cargo build
+
+workflows:
+  check-and-build:
+    jobs:
+      - check
+      - build
