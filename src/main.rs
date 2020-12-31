@@ -14,11 +14,14 @@ fn main() {
         Err(_) => { println!("Failed to load configuration"); return }
     };
     println!("Starting Sliproad on port {}", c.general.port);
-    match file_providers::init() {
-        Ok(_) => println!("All providers initialized"),
+    let p = match file_providers::init() {
+        Ok(x) => {
+            println!("All providers initialized");
+            x
+        },
         Err(_) => { println!("A provider failed to initialize"); return }
-    }
-    match webserver::run_server(c.general.port  ) {
+    };
+    match webserver::run_server(c.general.port, p) {
         Ok(_) => println!("Shut down gracefully."),
         Err(v) => println!("Error while shutting down! {}", v)
     }

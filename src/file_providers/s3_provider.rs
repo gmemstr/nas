@@ -1,31 +1,24 @@
+// For now, this mirrors disk_provider.rs for testing. Proper S3 implementation to be done soon.
 use std::fs;
 use std::collections::HashMap;
 use crate::file_providers::{FileProvider, Provider};
 
-pub struct S3Provider {
-    name: String,
-    location: String,
-    properties: Option<HashMap<String, String>>
-}
+pub struct S3Provider(pub Provider);
 
 impl FileProvider for S3Provider {
-    fn from_provider(provider: Provider) -> S3Provider {
-        S3Provider {
-            name: provider.name,
-            location: provider.location,
-            properties: provider.properties,
-        }
-    }
-
     fn setup(&self) -> bool {
-        match fs::create_dir(&self.location) {
+        match fs::create_dir(&self.0.location) {
             Ok(_) => true,
             Err(_) => false,
         }
     }
 
+    fn get_name(&self) -> &str {
+        &self.0.name
+    }
+
     fn get_directory(&self, path: String) -> Vec<String> {
-        let paths = fs::read_dir(format!("{}/{}", self.location, path)).unwrap();
+        let paths = fs::read_dir(format!("{}/{}", self.0.location, path)).unwrap();
         let mut vec = Vec::new();
         for path in paths {
             let name = path.unwrap().file_name().to_str().unwrap().to_string();
