@@ -1,10 +1,12 @@
 use std::fs;
 use std::collections::HashMap;
-use crate::file_providers::{FileProvider, Provider};
+use crate::file_providers::{FileProvider, Provider, Providers};
 
-pub(crate) struct DiskProvider(pub Provider);
+#[derive(Clone, Debug)]
+pub struct DiskProvider(pub Provider);
 
 impl FileProvider for DiskProvider {
+
     fn setup(&self) -> bool {
         match fs::create_dir(&self.0.location) {
             Ok(_) => true,

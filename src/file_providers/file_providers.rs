@@ -9,7 +9,25 @@ use std::fs::File;
 #[path = "disk_provider.rs"] pub mod disk_provider;
 #[path = "s3_provider.rs"] pub mod s3_provider;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
+pub enum Providers {
+    D(Provider),
+    Disk(DiskProvider),
+    S3(S3Provider),
+}
+
+impl Providers {
+    pub fn get(&self) -> Self {
+        println!("{:?}", self);
+        match self {
+            Providers::Disk(p) => p,
+            Providers::S3(p) => p,
+            Providers::D(_) => {}
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct Provider {
     pub name: String,
     location: String,
@@ -25,8 +43,8 @@ pub trait FileProvider {
     fn delete(&self, path: String) -> bool;
 }
 
-pub fn init() -> Result<Vec<Box<dyn FileProvider>>, bool> {
-    let mut provider_list: Vec<Box<dyn FileProvider>> = Vec::new();
+pub fn init() -> Result<Vec<Box<Providers>>, bool> {
+    let mut provider_list: Vec<Box<Providers>> = Vec::new();
     let config = load_config(None);
     let c = match config {
         Ok(v) => v,
@@ -39,12 +57,12 @@ pub fn init() -> Result<Vec<Box<dyn FileProvider>>, bool> {
             location: p_config.path,
             properties: p_config.config,
         };
-        let x: Box<dyn FileProvider> = match p_config.provider.as_str() {
-            "disk" => Box::new(DiskProvider(p)),
-            "s3" => Box::new(S3Provider(p)),
+        let x: Box<Providers> = match p_config.provider.as_str() {
+            "disk" => Box::new(Providers::Disk(DiskProvider(p))),
+            "s3" => Box::new(Providers::S3(S3Provider(p))),
             _ => continue,
         };
-        x.setup();
+
         provider_list.push(x);
     }
 

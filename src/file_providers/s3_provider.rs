@@ -3,6 +3,7 @@ use std::fs;
 use std::collections::HashMap;
 use crate::file_providers::{FileProvider, Provider};
 
+#[derive(Clone, Debug)]
 pub struct S3Provider(pub Provider);
 
 impl FileProvider for S3Provider {
