@@ -1,6 +1,3 @@
-#![feature(allocator_api)]
-#![feature(str_split_once)]
-
 use crate::configuration::Configuration;
 use std::borrow::Borrow;
 
