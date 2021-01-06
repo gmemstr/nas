@@ -8,7 +8,7 @@ use std::borrow::Borrow;
 
 #[derive(Clone)]
 struct AppState {
-    providers: Vec<Box<Providers>>,
+    providers: Vec<Providers>,
 }
 
 #[get("/")]
@@ -30,14 +30,17 @@ async fn dir_index(data: web::Data<AppState>, p: web::Path<String>) -> impl Resp
     // We can assume the first item is our provider.
     let mut splitter = p.splitn(1, "/");
     let provider_name = splitter.next().unwrap();
-    let path = splitter.next().unwrap();
+    let path = match splitter.next() {
+        None => "",
+        Some(x) => x,
+    };
 
     for provider in providers {
         if provider.get_name() == &provider_name.to_string() {
             return match provider.get_object(path.to_string()) {
-                ObjectType::Directory(list) => { format!("{}", json!(list)) }
-                ObjectType::File(file) => { format!("{}", file) }
-                ObjectType::Missing=> { format!("Not Found") }
+                ObjectType::Directory(list) => format!("{}", json!(list)),
+                ObjectType::File(file) => format!("{}", file),
+                ObjectType::Missing => format!("Not Found"),
             }
         }
     }
@@ -46,7 +49,7 @@ async fn dir_index(data: web::Data<AppState>, p: web::Path<String>) -> impl Resp
 }
 
 #[actix_web::main]
-pub async fn run_server(port: i32, providers: Vec<Box<Providers>>) -> std::io::Result<()> {
+pub async fn run_server(port: i32, providers: Vec<Providers>) -> std::io::Result<()> {
     let app_state = AppState {
         providers,
     };

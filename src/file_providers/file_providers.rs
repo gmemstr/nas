@@ -50,8 +50,8 @@ impl Providers {
     }
 }
 
-pub fn init() -> Result<Vec<Box<Providers>>, bool> {
-    let mut provider_list: Vec<Box<Providers>> = Vec::new();
+pub fn init() -> Result<Vec<Providers>, bool> {
+    let mut provider_list: Vec<Providers> = Vec::new();
     let config = load_config(None);
     let c = match config {
         Ok(v) => v,
@@ -64,14 +64,13 @@ pub fn init() -> Result<Vec<Box<Providers>>, bool> {
             location: p_config.path,
             properties: p_config.config,
         };
-        let x: Box<Providers> = match p_config.provider.as_str() {
-            "disk" => Box::new(Providers::Disk(p)),
-            "s3" => Box::new(Providers::S3(p)),
+        let x: Providers = match p_config.provider.as_str() {
+            "disk" => Providers::Disk(p),
+            "s3" =>Providers::S3(p),
             _ => continue,
         };
 
         x.setup();
-
         provider_list.push(x);
     }
 

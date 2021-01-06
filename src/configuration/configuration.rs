@@ -4,9 +4,9 @@ use std::collections::HashMap;
 
 #[derive(Deserialize)]
 pub struct Configuration {
-    pub general: GeneralConfiguration,
+    pub general: Option<GeneralConfiguration>,
     pub providers: HashMap<String, ProviderConfiguration>,
-    authentication: HashMap<String, AuthConfiguration>
+    authentication: Option<HashMap<String, AuthConfiguration>>
 }
 
 #[derive(Deserialize)]
