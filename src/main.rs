@@ -1,8 +1,8 @@
 #![feature(allocator_api)]
+#![feature(str_split_once)]
 
 use crate::configuration::Configuration;
 use std::borrow::Borrow;
-use crate::file_providers::FileProvider;
 
 #[path = "configuration/configuration.rs"] pub mod configuration;
 #[path = "file_providers/file_providers.rs"] pub mod file_providers;
@@ -17,7 +17,7 @@ fn main() {
     println!("Starting Sliproad on port {}", c.general.port);
     let p = match file_providers::init() {
         Ok(x) => {
-            x.first().unwrap().get();
+            x.first().unwrap().get_name();
             println!("All providers initialized");
             x
         },

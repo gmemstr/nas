@@ -1,7 +1,7 @@
 // This file handles the routing and starting of the webserver. Routes are dispatched to their
 // respective modules.
 use actix_web::{get, web, App, HttpServer, Responder};
-use crate::file_providers::{FileProvider, Provider, Providers};
+use crate::file_providers::{Provider, Providers, ObjectType};
 use serde_json::json;
 use std::cell::Cell;
 use std::borrow::Borrow;
@@ -19,23 +19,29 @@ async fn index() -> impl Responder {
 #[get("/providers")]
 async fn provider_index(data: web::Data<AppState>) -> impl Responder {
     let providers = &data.providers;
-    let provider_names: Vec<_> = providers.iter().map(|x| x.get()).collect();
+    let provider_names: Vec<_> = providers.iter().map(|x| x.get_name()).collect();
     format!("{}", json!(provider_names))
 }
 
-#[get("/files/{provider}/{directory:.*}")]
-async fn directory_file_index(web::Path((provider, directory)): web::Path<(String, String)>) -> impl Responder {
-    format!("provider:{}\ndirectory:{}", provider, directory)
-}
-
-#[get("/files/{provider}")]
+#[get("/files/{path:.*}")]
 async fn dir_index(data: web::Data<AppState>, p: web::Path<String>) -> impl Responder {
-    // let providers = &data.providers;
-    // for provider in providers.borrow().into_inner() {
-    //     if provider.get_name().to_string() == p.to_string() {
-    //         return format!("{}", json!(provider.get_directory("".to_string())))
-    //     }
-    // }
+    let providers = &data.providers;
+
+    // We can assume the first item is our provider.
+    let (provider_name, path) = match p.split_once("/") {
+        None => { (p.0.as_str(), "") }
+        Some(x) => { x }
+    };
+
+    for provider in providers {
+        if provider.get_name() == &provider_name.to_string() {
+            return match provider.get_object(path.to_string()) {
+                ObjectType::Directory(list) => { format!("{}", json!(list)) }
+                ObjectType::File(file) => { format!("{}", file) }
+                ObjectType::Missing=> { format!("Not Found") }
+            }
+        }
+    }
 
     format!("[]")
 }
@@ -50,7 +56,6 @@ pub async fn run_server(port: i32, providers: Vec<Box<Providers>>) -> std::io::R
         .service(web::scope("/api")
             .service(dir_index)
             .service(provider_index)
-            .service(directory_file_index)
         )
         .data(app_state.clone()))
         .bind(format!("127.0.0.1:{}", port))?

@@ -2,30 +2,11 @@ use std::iter::Map;
 use std::fmt::Error;
 use std::collections::HashMap;
 use crate::configuration::load_config;
-use crate::file_providers::disk_provider::DiskProvider;
-use crate::file_providers::s3_provider::S3Provider;
 use std::fs::File;
+use crate::file_providers::Providers::Disk;
 
 #[path = "disk_provider.rs"] pub mod disk_provider;
 #[path = "s3_provider.rs"] pub mod s3_provider;
-
-#[derive(Clone, Debug)]
-pub enum Providers {
-    D(Provider),
-    Disk(DiskProvider),
-    S3(S3Provider),
-}
-
-impl Providers {
-    pub fn get(&self) -> Self {
-        println!("{:?}", self);
-        match self {
-            Providers::Disk(p) => p,
-            Providers::S3(p) => p,
-            Providers::D(_) => {}
-        }
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct Provider {
@@ -34,13 +15,39 @@ pub struct Provider {
     properties: Option<HashMap<String, String>>
 }
 
-pub trait FileProvider {
-    fn setup(&self) -> bool;
-    fn get_name(&self) -> &str;
-    fn get_directory(&self, path: String) -> Vec<String>;
-    fn save_file(&self, path: String, contents: String) -> bool;
-    fn create_directory(&self, path: String) -> bool;
-    fn delete(&self, path: String) -> bool;
+#[derive(Clone, Debug)]
+pub enum Providers {
+    Disk(Provider),
+    S3(Provider),
+}
+
+pub enum ObjectType {
+    Directory(Vec<String>),
+    File(String),
+    Missing,
+}
+
+impl Providers {
+    pub fn setup(&self) -> bool {
+        match self {
+            Providers::Disk(ref p) => { disk_provider::setup(p) }
+            Providers::S3(p) => { true }
+        }
+    }
+
+    pub fn get_name(&self) -> &String {
+        match self {
+            Providers::Disk(p) => { &p.name }
+            Providers::S3(p) => { &p.name }
+        }
+    }
+
+    pub fn get_object(&self, path: String) -> ObjectType {
+        match self {
+            Providers::Disk(p) => { disk_provider::get_object(&format!("{}/{}", p.location, path)) }
+            Providers::S3(p) => { s3_provider::get_object(&format!("{}/{}", p.location, path)) }
+        }
+    }
 }
 
 pub fn init() -> Result<Vec<Box<Providers>>, bool> {
@@ -58,10 +65,12 @@ pub fn init() -> Result<Vec<Box<Providers>>, bool> {
             properties: p_config.config,
         };
         let x: Box<Providers> = match p_config.provider.as_str() {
-            "disk" => Box::new(Providers::Disk(DiskProvider(p))),
-            "s3" => Box::new(Providers::S3(S3Provider(p))),
+            "disk" => Box::new(Providers::Disk(p)),
+            "s3" => Box::new(Providers::S3(p)),
             _ => continue,
         };
+
+        x.setup();
 
         provider_list.push(x);
     }

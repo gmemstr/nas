@@ -1,42 +1,52 @@
 // For now, this mirrors disk_provider.rs for testing. Proper S3 implementation to be done soon.
 use std::fs;
 use std::collections::HashMap;
-use crate::file_providers::{FileProvider, Provider};
+use crate::file_providers::{Provider, Providers, ObjectType};
+use serde_json::value::Value::Object;
+use std::fs::Metadata;
+use std::io::Error;
 
-#[derive(Clone, Debug)]
-pub struct S3Provider(pub Provider);
-
-impl FileProvider for S3Provider {
-    fn setup(&self) -> bool {
-        match fs::create_dir(&self.0.location) {
-            Ok(_) => true,
-            Err(_) => false,
-        }
+pub fn setup(provider: &Provider) -> bool {
+    match fs::create_dir(provider.location.clone()) {
+        Ok(_) => true,
+        Err(_) => false,
     }
+}
 
-    fn get_name(&self) -> &str {
-        &self.0.name
-    }
+pub fn get_object(path: &String) -> ObjectType {
+    let location = path;
+    let meta = match fs::metadata(location) {
+        Ok(m) => { m }
+        Err(_) => { return ObjectType::Missing }
+    };
 
-    fn get_directory(&self, path: String) -> Vec<String> {
-        let paths = fs::read_dir(format!("{}/{}", self.0.location, path)).unwrap();
+    return if meta.is_dir() {
+        let paths = fs::read_dir(format!("{}", &location)).unwrap();
         let mut vec = Vec::new();
         for path in paths {
             let name = path.unwrap().file_name().to_str().unwrap().to_string();
             vec.push(name);
         }
-        return vec;
-    }
 
-    fn save_file(&self, path: String, contents: String) -> bool {
-        unimplemented!()
+        ObjectType::Directory(vec)
+    } else {
+        let contents = match fs::read_to_string(&location) {
+            Ok(c) => {c}
+            Err(_) => { "".to_string() }
+        };
+        ObjectType::File(contents)
     }
+}
 
-    fn create_directory(&self, path: String) -> bool {
-        unimplemented!()
-    }
 
-    fn delete(&self, path: String) -> bool {
-        unimplemented!()
-    }
+fn save_file(path: String, contents: String) -> bool {
+    unimplemented!()
+}
+
+fn create_directory(path: String) -> bool {
+    unimplemented!()
+}
+
+fn delete(path: String) -> bool {
+    unimplemented!()
 }
