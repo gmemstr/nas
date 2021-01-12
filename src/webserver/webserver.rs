@@ -28,7 +28,7 @@ async fn dir_index(data: web::Data<AppState>, p: web::Path<String>) -> impl Resp
     let providers = &data.providers;
 
     // We can assume the first item is our provider.
-    let mut splitter = p.splitn(1, "/");
+    let mut splitter = p.splitn(2, '/');
     let provider_name = splitter.next().unwrap();
     let path = match splitter.next() {
         None => "",

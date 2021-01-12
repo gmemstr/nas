@@ -22,7 +22,7 @@ pub enum Providers {
 }
 
 pub enum ObjectType {
-    Directory(Vec<String>),
+    Directory(Vec<HashMap<String, String>>),
     File(String),
     Missing,
 }
