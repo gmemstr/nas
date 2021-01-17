@@ -1,19 +1,27 @@
 // This file handles the routing and starting of the webserver. Routes are dispatched to their
 // respective modules.
-use actix_web::{get, web, App, HttpServer, Responder};
+use actix_web::{get, web, App, HttpServer, Responder, Result, HttpRequest};
 use crate::file_providers::{Provider, Providers, ObjectType};
 use serde_json::json;
 use std::cell::Cell;
 use std::borrow::Borrow;
+use std::path::{PathBuf, Path};
+use actix_files::NamedFile;
 
 #[derive(Clone)]
 struct AppState {
     providers: Vec<Providers>,
 }
 
-#[get("/")]
-async fn index() -> impl Responder {
-    format!("Hello, world!")
+async fn index(req: HttpRequest) -> Result<NamedFile> {
+    let mut path = PathBuf::new();
+    let mut filename: String = req.match_info().query("filename").parse().unwrap();
+    if filename == "" {
+        filename = "index.html".to_string();
+    }
+    path.push("web");
+    path.push(filename);
+    Ok(NamedFile::open(path)?)
 }
 
 #[get("/providers")]
@@ -54,11 +62,11 @@ pub async fn run_server(port: i32, providers: Vec<Providers>) -> std::io::Result
         providers,
     };
     HttpServer::new(move || App::new()
-        .service(index)
         .service(web::scope("/api")
             .service(dir_index)
             .service(provider_index)
         )
+        .route("/{filename:.*}", web::get().to(index))
         .data(app_state.clone()))
         .bind(format!("127.0.0.1:{}", port))?
         .run()
