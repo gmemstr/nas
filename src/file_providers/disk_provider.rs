@@ -2,8 +2,8 @@ use std::fs;
 use std::collections::HashMap;
 use crate::file_providers::{Provider, Providers, ObjectType};
 use serde_json::value::Value::Object;
-use std::fs::Metadata;
-use std::io::Error;
+use std::fs::{Metadata, File, OpenOptions};
+use std::io::{Error, Bytes, Write};
 
 pub fn setup(provider: &Provider) -> bool {
     match fs::create_dir(provider.location.clone()) {
@@ -46,9 +46,23 @@ pub fn get_object(path: &String) -> ObjectType {
     }
 }
 
+pub fn save_object(path: &String, contents: &[u8]) -> bool {
+    let mut f: File = match fs::metadata(path) {
+        Ok(_) => match OpenOptions::new().write(true).open(path) {
+            Ok(f) => f,
+            Err(_) => return false
+        },
+        Err(_) => match File::create(path) {
+            Ok(f) => f,
+            Err(_) => return false
+        }
+    };
 
-fn save_file(path: String, contents: String) -> bool {
-    unimplemented!()
+    let r = f.write_all(contents);
+    match r {
+        Ok(_) => true,
+        Err(_) => false
+    }
 }
 
 fn create_directory(path: String) -> bool {
