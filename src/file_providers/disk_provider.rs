@@ -38,9 +38,9 @@ pub fn get_object(path: &String) -> ObjectType {
 
         ObjectType::Directory(vec)
     } else {
-        let contents = match fs::read_to_string(&location) {
+        let contents = match fs::read(&location) {
             Ok(c) => {c}
-            Err(_) => { "".to_string() }
+            Err(_) => { Vec::new() }
         };
         ObjectType::File(contents)
     }

@@ -24,7 +24,7 @@ pub enum Providers {
 
 pub enum ObjectType {
     Directory(Vec<HashMap<String, String>>),
-    File(String),
+    File(Vec<u8>),
     Missing,
 }
 

@@ -1,6 +1,6 @@
 // This file handles the routing and starting of the webserver. Routes are dispatched to their
 // respective modules.
-use actix_web::{get, post, web, App, HttpServer, Responder, Result, HttpRequest};
+use actix_web::{get, post, web, App, HttpServer, Responder, Result, HttpRequest, HttpResponse};
 use actix_multipart::Multipart;
 use crate::file_providers::{Provider, Providers, ObjectType};
 use serde_json::json;
@@ -37,21 +37,26 @@ async fn provider_index(data: web::Data<AppState>) -> impl Responder {
 }
 
 #[get("/files/{path:.*}")]
-async fn dir_index(data: web::Data<AppState>, p: web::Path<String>) -> impl Responder {
+async fn dir_index(data: web::Data<AppState>, p: web::Path<String>) -> Result<HttpResponse> {
     let providers = &data.providers;
     let (provider_name, path) = extract_from_path(&p);
 
     for provider in providers {
         if provider.get_name().to_string() == provider_name {
             return match provider.get_object(path) {
-                ObjectType::Directory(list) => format!("{}", json!(list)),
-                ObjectType::File(file) => format!("{}", file),
-                ObjectType::Missing => format!("Not Found"),
-            }
+                ObjectType::Directory(list) => Ok(HttpResponse::Ok()
+                    .content_type("application/json")
+                    .body(json!(list))),
+                ObjectType::File(file) => Ok(HttpResponse::Ok()
+                    .body(file)),
+                ObjectType::Missing => Ok(HttpResponse::NotFound()
+                    .content_type("application/json")
+                    .body("[]")),
+            };
         }
     }
 
-    format!("[]")
+    Ok(HttpResponse::NotFound().body("Not found"))
 }
 
 #[post("/files/{path:.*}")]
