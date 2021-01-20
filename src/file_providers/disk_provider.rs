@@ -48,7 +48,9 @@ pub fn get_object(path: &String) -> ObjectType {
 
 pub fn save_object(path: &String, contents: &[u8]) -> bool {
     let mut f: File = match fs::metadata(path) {
-        Ok(_) => match OpenOptions::new().write(true).open(path) {
+        // Ensure this is append mode. Does not consider files with the same name - working on a
+        // proper solution for this.
+        Ok(_) => match OpenOptions::new().append(true).open(path) {
             Ok(f) => f,
             Err(_) => return false
         },
@@ -58,7 +60,7 @@ pub fn save_object(path: &String, contents: &[u8]) -> bool {
         }
     };
 
-    let r = f.write_all(contents);
+    let r = f.write(contents);
     match r {
         Ok(_) => true,
         Err(_) => false

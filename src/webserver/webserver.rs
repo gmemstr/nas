@@ -9,7 +9,6 @@ use std::borrow::Borrow;
 use std::path::{PathBuf, Path};
 use actix_files::NamedFile;
 use actix_web::rt::blocking::BlockingError;
-use serde::export::fmt::Error;
 use std::fs::File;
 use futures::{StreamExt, TryStreamExt};
 
@@ -84,6 +83,10 @@ async fn save_object(mut payload: Multipart, p: web::Path<String>, data: web::Da
             let contents = chunk.unwrap();
 
             let r = web::block(move || provider.save_object(&filepath, &*contents)).await;
+            match  r {
+                Ok(result) => if !result { println!("{:?}", result) },
+                Err(err) => println!("{:?}", err),
+            }
         }
     };
 
